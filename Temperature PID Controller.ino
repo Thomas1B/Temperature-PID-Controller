@@ -1,7 +1,6 @@
 /*
 
-Temperature PID Controller Interface using an rotary encoder.
-
+Temperature PID Controller  using an rotary encoder.
 
 Written by Thomas Bourgeois.
 */
