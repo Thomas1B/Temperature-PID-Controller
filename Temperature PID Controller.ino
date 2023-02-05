@@ -5,9 +5,6 @@ Temperature PID Controller  using an rotary encoder.
 Written by Thomas Bourgeois.
 */
 
-
-
-
 #include <BfButton.h>
 
 
@@ -46,14 +43,8 @@ void led(int red, int green, int blue) {
     Function to color the rbg led
 
     Parameters:
-      red, green, blue (int): scaled from 0 to 100.
+      red, green, blue (int 0 - 255)
   */
-
-  red = map(red, 0, 100, 0, 255);
-  green = map(green, 0, 100, 0, 255);
-  blue = map(blue, 0, 100, 0, 255);
-
-
   analogWrite(RED, red);
   analogWrite(GREEN, green);
   analogWrite(BLUE, blue);
@@ -76,7 +67,7 @@ void read_button(BfButton *btn, BfButton::press_pattern_t pattern) {
         led(0, 0, 0);
       } else {
         powerState = true;
-        led(0, 100, 0);
+        led(0, 255, 0);
       }
       break;
   }
@@ -113,6 +104,7 @@ void setup() {
 
 // ***************************************************** Main Loop *****************************************************
 
+int k = 0;
 void loop() {
   // put your main code here, to run repeatedly:
 
@@ -125,6 +117,7 @@ void loop() {
     } else {  // counter-clockwise
       set_temperature -= 0.5;
     }
+
 
     // conditions if user goes beyond temperature allowable range.
     if (set_temperature > max_temperature) {
