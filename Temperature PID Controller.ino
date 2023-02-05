@@ -36,6 +36,7 @@ PID myPID(&cur_temperature, &Output, &Setpoint, 2,5,1, DIRECT);
 #define CLK 2
 #define DT 3
 #define SW 4
+BfButton btn(BfButton::STANDALONE_DIGITAL, SW, true, LOW);
 
 // pins for RBG LED
 #define RED A0
@@ -134,5 +135,5 @@ void loop() {
   // Future code here...
 
 
-
+  
 }
