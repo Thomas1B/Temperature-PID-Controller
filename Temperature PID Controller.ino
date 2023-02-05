@@ -3,7 +3,31 @@ Temperature PID Controller  using an rotary encoder.
 
 Written by Thomas Bourgeois.
 */
-#include <BfButton.h>
+
+
+#include <BfButton.h> // For Encoder.
+#include <PID_v1.h> // PID Controller library.
+
+// ***************************************************** Variables *****************************************************
+const float base_temperature = 35;
+const float max_temperature = 100;
+
+// Variables for Encoder
+int currentStateCLK;
+int lastState;
+int curState;
+
+
+// Variables for heater
+bool powerState = false;
+
+// PID Variables
+double Setpoint = base_temperature;
+double cur_temperature;
+double Output;
+
+//Specify the links and initial tuning parameters
+PID myPID(&cur_temperature, &Output, &Setpoint, 2,5,1, DIRECT);
 
 
 // ***************************************************** Defining Pins *****************************************************
@@ -12,27 +36,12 @@ Written by Thomas Bourgeois.
 #define CLK 2
 #define DT 3
 #define SW 4
-BfButton btn(BfButton::STANDALONE_DIGITAL, SW, true, LOW);
 
 // pins for RBG LED
 #define RED A0
 #define GREEN A1
 #define BLUE A2
 
-// ***************************************************** Variables *****************************************************
-
-// Variables for Encoder
-int currentStateCLK;
-int lastState;
-int curState;
-
-// Temperature variables
-const float base_temperature = 35;
-const float max_temperature = 100;
-float set_temperature = base_temperature;
-
-// Variables for heater
-bool powerState = false;
 
 // ***************************************************** Functions *****************************************************
 
@@ -55,7 +64,7 @@ void read_button(BfButton *btn, BfButton::press_pattern_t pattern) {
   switch (pattern) {
 
     case BfButton::SINGLE_PRESS:
-      set_temperature = base_temperature;
+      Setpoint = base_temperature;
       // updateDisplay();
       break;
 
@@ -76,7 +85,7 @@ void updateDisplay() {
   // Function to update display
 
   Serial.print("Set Temperature: ");
-  Serial.println(set_temperature);
+  Serial.println(Setpoint);
 }
 
 // ***************************************************** Main Program *****************************************************
@@ -108,19 +117,22 @@ void loop() {
   int curState = digitalRead(CLK);
   if (curState != lastState) {
     if (digitalRead(DT) != curState) {  // clockwise
-      set_temperature += 0.5;
+      Setpoint += 0.5;
     } else {  // counter-clockwise
-      set_temperature -= 0.5;
+      Setpoint -= 0.5;
     }
     // if user goes beyond temperature allowable range.
-    if (set_temperature > max_temperature) {
-      set_temperature = max_temperature;
-    } else if (set_temperature < base_temperature) {
-      set_temperature = base_temperature;
+    if (Setpoint > max_temperature) {
+      Setpoint = max_temperature;
+    } else if (Setpoint < base_temperature) {
+      Setpoint = base_temperature;
     }
     updateDisplay();
   }
   lastState = curState;
   // ************************************************
   // Future code here...
+
+
+
 }
