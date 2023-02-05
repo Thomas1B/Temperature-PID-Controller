@@ -5,7 +5,6 @@ Written by Thomas Bourgeois.
 
 */
 
-#include <Arduino.h>
 #include <BfButton.h> // For Encoder.
 #include <PID_v1.h> // PID Controller library.
 
