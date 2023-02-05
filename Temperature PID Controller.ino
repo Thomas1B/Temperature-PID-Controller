@@ -1,10 +1,8 @@
 /*
-
 Temperature PID Controller  using an rotary encoder.
 
 Written by Thomas Bourgeois.
 */
-
 #include <BfButton.h>
 
 
@@ -58,7 +56,7 @@ void read_button(BfButton *btn, BfButton::press_pattern_t pattern) {
 
     case BfButton::SINGLE_PRESS:
       set_temperature = base_temperature;
-      updateDisplay();
+      // updateDisplay();
       break;
 
     case BfButton::LONG_PRESS:
@@ -73,6 +71,7 @@ void read_button(BfButton *btn, BfButton::press_pattern_t pattern) {
   }
 }
 
+
 void updateDisplay() {
   // Function to update display
 
@@ -80,8 +79,7 @@ void updateDisplay() {
   Serial.println(set_temperature);
 }
 
-
-// ***************************************************** Setup *****************************************************
+// ***************************************************** Main Program *****************************************************
 
 void setup() {
   // put your setup code here, to run once:
@@ -102,13 +100,10 @@ void setup() {
   lastState = digitalRead(CLK);
 }
 
-// ***************************************************** Main Loop *****************************************************
 
-int k = 0;
 void loop() {
-  // put your main code here, to run repeatedly:
 
-  //Encoder rotation tracking
+  // ************ Encoder stuff ************
   btn.read();
   int curState = digitalRead(CLK);
   if (curState != lastState) {
@@ -117,9 +112,7 @@ void loop() {
     } else {  // counter-clockwise
       set_temperature -= 0.5;
     }
-
-
-    // conditions if user goes beyond temperature allowable range.
+    // if user goes beyond temperature allowable range.
     if (set_temperature > max_temperature) {
       set_temperature = max_temperature;
     } else if (set_temperature < base_temperature) {
@@ -128,6 +121,6 @@ void loop() {
     updateDisplay();
   }
   lastState = curState;
-
+  // ************************************************
   // Future code here...
 }
