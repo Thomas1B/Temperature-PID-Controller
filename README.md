@@ -4,7 +4,7 @@
 This project uses an PID controller algorithm to heat up and maintain an accurate temperature.
 <br>
 
-![PID Diagram](PID%20Diagram.png)<br>
+![PID Diagram](Images/PID%20Diagram.png)<br>
 
 
 ## Parts List
