@@ -4,9 +4,11 @@ Temperature PID Controller  using an rotary encoder.
 Written by Thomas Bourgeois.
 
 */
-
+#include <LiquidCrystal_I2C.h>
 #include <BfButton.h> // For Encoder.
 #include <PID_v1.h> // PID Controller library.
+
+LiquidCrystal_I2C lcd(0x27, 16, 2);
 
 // ***************************************************** Variables *****************************************************
 const float base_temperature = 35;
@@ -87,12 +89,29 @@ void updateDisplay() {
 
   Serial.print("Set Temperature: ");
   Serial.println(Setpoint);
+  Serial.print("C Temperature: ");
+  Serial.println(Setpoint, 1);    
+
+  lcd.setCursor(0, 0);
+  lcd.print("Set Temp: ");
+  lcd.print(Setpoint, 1);
+  lcd.print((char)223);
+  lcd.print("C");
+
+  lcd.setCursor(0, 1);
+  lcd.print("Cur Temp: ");
+  lcd.print(Setpoint, 1);
+  lcd.print((char)223);
+  lcd.print("C");
 }
 
 // ***************************************************** Main Program *****************************************************
 
 void setup() {
   // put your setup code here, to run once:
+  lcd.init(); // initialize the lcd
+  lcd.backlight();
+
   Serial.begin(9600);
   updateDisplay();
 
