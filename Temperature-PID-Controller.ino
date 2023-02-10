@@ -10,31 +10,6 @@ Written by Thomas Bourgeois.
 
 LiquidCrystal_I2C lcd(0x27, 16, 2);
 
-// ***************************************************** Variables *****************************************************
-const float base_temperature = 35;
-const float max_temperature = 100;
-
-// Variables for Encoder
-int currentStateCLK;
-int lastState;
-int curState;
-const double increment = 0.25;
-
-
-
-// Variables for heater
-bool powerState = false;
-
-// PID Variables
-double Setpoint = base_temperature;
-double cur_temperature;
-double Output;
-
-
-//Specify the links and initial tuning parameters
-PID myPID(&cur_temperature, &Output, &Setpoint, 2,5,1, DIRECT);
-
-
 // ***************************************************** Defining Pins *****************************************************
 
 // pins for encoder
@@ -47,6 +22,28 @@ BfButton btn(BfButton::STANDALONE_DIGITAL, SW, true, LOW);
 #define RED A0
 #define GREEN A1
 #define BLUE A2
+
+
+// ***************************************************** Variables *****************************************************
+const float temperature_range[] = {35, 100}; // allowable temperature range.
+
+// Variables for tempeture probes
+const int temperature_resitor =  10e4;
+
+// Variables for Encoder
+int currentStateCLK;
+int lastState;
+int curState;
+const double increment = 0.25; 
+
+// Variables for heater
+bool powerState = false;
+
+// PID Variables
+double Setpoint = temperature_range[0]; // user set temperature.
+double cur_temperature; // current temperature
+double Output; // output to heater.
+PID myPID(&cur_temperature, &Output, &Setpoint, 2,5,1, DIRECT); //Specify the links and initial tuning parameters
 
 
 // ***************************************************** Functions *****************************************************
@@ -64,13 +61,14 @@ void led(int red, int green, int blue) {
 }
 
 
+
 void read_button(BfButton *btn, BfButton::press_pattern_t pattern) {
   // Function to read button on the Encoder.
 
   switch (pattern) {
 
     case BfButton::SINGLE_PRESS:
-      Setpoint = base_temperature;
+      Setpoint = temperature_range[0];
       updateDisplay();
       break;
 
@@ -145,10 +143,10 @@ void loop() {
       Setpoint -= increment;
     }
     // if user goes beyond temperature allowable range.
-    if (Setpoint > max_temperature) {
-      Setpoint = max_temperature;
-    } else if (Setpoint < base_temperature) {
-      Setpoint = base_temperature;
+    if (Setpoint > temperature_range[1]) {
+      Setpoint = temperature_range[1];
+    } else if (Setpoint < temperature_range[0]) {
+      Setpoint = temperature_range[1];
     }
     updateDisplay();
   }
