@@ -18,6 +18,8 @@ const float max_temperature = 100;
 int currentStateCLK;
 int lastState;
 int curState;
+const double increment = 0.25;
+
 
 
 // Variables for heater
@@ -27,6 +29,7 @@ bool powerState = false;
 double Setpoint = base_temperature;
 double cur_temperature;
 double Output;
+
 
 //Specify the links and initial tuning parameters
 PID myPID(&cur_temperature, &Output, &Setpoint, 2,5,1, DIRECT);
@@ -68,7 +71,7 @@ void read_button(BfButton *btn, BfButton::press_pattern_t pattern) {
 
     case BfButton::SINGLE_PRESS:
       Setpoint = base_temperature;
-      // updateDisplay();
+      updateDisplay();
       break;
 
     case BfButton::LONG_PRESS:
@@ -137,9 +140,9 @@ void loop() {
   int curState = digitalRead(CLK);
   if (curState != lastState) {
     if (digitalRead(DT) != curState) {  // clockwise
-      Setpoint += 0.5;
+      Setpoint += increment;
     } else {  // counter-clockwise
-      Setpoint -= 0.5;
+      Setpoint -= increment;
     }
     // if user goes beyond temperature allowable range.
     if (Setpoint > max_temperature) {
