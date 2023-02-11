@@ -30,11 +30,14 @@ BfButton btn(BfButton::STANDALONE_DIGITAL, SW, true, LOW);
 // ***************************************************** Variables *****************************************************
 const float temperature_range[] = { 35, 150 };  // allowable temperature range.
 
-// Variables for Encoder
-int currentStateCLK;
-int lastState;
-int curState;
-const double increment = 0.25;
+// Variables for Encoder:
+const float increment = 0.5; // increment for each turn
+const float holdTime = 1000; // how long to hold the button down.
+// DO NOT CHANGE THE FOLLOWING
+int preCLK; // previous states
+int preDATA;
+long TimeOfLastDebounce = 0; // variables for debouncing.
+const long DelayofDebounce = 0.01;
 
 // Variables for heater
 bool powerState = false;
@@ -119,7 +122,7 @@ void setup() {
   pinMode(DT, INPUT);
   btn.onPress(read_button)  // single click
     // .onDoublePress(read_button) // double click
-    .onPressFor(read_button, 1000);  // hold for 1sec for turning on/off heating.
+    .onPressFor(read_button, holdTime);  // hold for 1sec for turning on/off heating.
 
   pinMode(RED, OUTPUT);
   pinMode(GREEN, OUTPUT);
