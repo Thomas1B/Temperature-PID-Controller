@@ -1,9 +1,13 @@
 /*
-Temperature PID Controller  using an rotary encoder.
+Temperature PID Controller using a KY-40 rotary encoder.
+
+Temperature is assumed to be in Celcius, unless otherwise stated.
 
 Written by Thomas Bourgeois.
 
 */
+
+
 #include <LiquidCrystal_I2C.h>
 #include <BfButton.h>  // For Encoder.
 #include <PID_v1.h>    // PID Controller library.
@@ -40,56 +44,6 @@ double Setpoint = temperature_range[0];                            // user set t
 double cur_temperature;                                            // current temperature
 double Output;                                                     // output to heater.
 PID myPID(&cur_temperature, &Output, &Setpoint, 1, 1, 1, DIRECT);  //Specify the links and initial tuning parameters
-
-
-// ***************************************************** Main Program *****************************************************
-
-void setup() {
-  // put your setup code here, to run once:
-  lcd.init();  // initialize the lcd
-  lcd.backlight();
-
-  Serial.begin(9600);
-  updateDisplay();
-
-  pinMode(CLK, INPUT);
-  pinMode(DT, INPUT);
-  btn.onPress(read_button)  // single click
-    // .onDoublePress(read_button) // double click
-    .onPressFor(read_button, 1000);  // hold for 1sec for turning on/off heating.
-
-  pinMode(RED, OUTPUT);
-  pinMode(GREEN, OUTPUT);
-  red_led(true); // initial heater is turned off.
-
-  // Read the initial state of Encoder.
-  lastState = digitalRead(CLK);
-}
-
-
-void loop() {
-
-  // ************ Encoder stuff ************
-  btn.read();
-  int curState = digitalRead(CLK);
-  if (curState != lastState) {
-    if (digitalRead(DT) != curState) {  // clockwise
-      Setpoint += increment;
-    } else {  // counter-clockwise
-      Setpoint -= increment;
-    }
-    // if user goes beyond temperature allowable range.
-    if (Setpoint > temperature_range[1]) {
-      Setpoint = temperature_range[1];
-    } else if (Setpoint < temperature_range[0]) {
-      Setpoint = temperature_range[0];
-    }
-    updateDisplay();
-  }
-  lastState = curState;
-  // ************************************************
-  // Future code here...
-}
 
 
 // ***************************************************** Functions *****************************************************
@@ -149,4 +103,53 @@ void updateDisplay() {
   lcd.print(Setpoint, 1);
   lcd.print((char)223);
   lcd.print("C");
+}
+
+// ***************************************************** Main Program *****************************************************
+
+void setup() {
+  // put your setup code here, to run once:
+  lcd.init();  // initialize the lcd
+  lcd.backlight();
+
+  Serial.begin(9600);
+  updateDisplay();
+
+  pinMode(CLK, INPUT);
+  pinMode(DT, INPUT);
+  btn.onPress(read_button)  // single click
+    // .onDoublePress(read_button) // double click
+    .onPressFor(read_button, 1000);  // hold for 1sec for turning on/off heating.
+
+  pinMode(RED, OUTPUT);
+  pinMode(GREEN, OUTPUT);
+  red_led(true); // initial heater is turned off.
+
+  // Read the initial state of Encoder.
+  lastState = digitalRead(CLK);
+}
+
+
+void loop() {
+
+  // ************ Encoder stuff ************
+  btn.read();
+  int curState = digitalRead(CLK);
+  if (curState != lastState) {
+    if (digitalRead(DT) != curState) {  // clockwise
+      Setpoint += increment;
+    } else {  // counter-clockwise
+      Setpoint -= increment;
+    }
+    // if user goes beyond temperature allowable range.
+    if (Setpoint > temperature_range[1]) {
+      Setpoint = temperature_range[1];
+    } else if (Setpoint < temperature_range[0]) {
+      Setpoint = temperature_range[0];
+    }
+    updateDisplay();
+  }
+  lastState = curState;
+  // ************************************************
+  // Future code here...
 }
