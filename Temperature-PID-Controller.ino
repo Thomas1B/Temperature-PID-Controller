@@ -117,10 +117,12 @@ void check_rotary() {
     if ((digitalRead(CLK) == 1) && (digitalRead(DT) == 0)) {
       Setpoint += increment;
       Serial.println(Setpoint);
+      updateDisplay();
     }
     if ((digitalRead(CLK) == 1) && (digitalRead(DT) == 1)) {
       Setpoint -= increment;
       Serial.println(Setpoint);
+      updateDisplay();
     }
   }
 
@@ -128,10 +130,12 @@ void check_rotary() {
     if ((digitalRead(CLK) == 0) && (digitalRead(DT) == 1)) {
       Setpoint += increment;
       Serial.println(Setpoint);
+      updateDisplay();
     }
     if ((digitalRead(CLK) == 0) && (digitalRead(DT) == 0)) {
       Setpoint -= increment;
       Serial.println(Setpoint);
+      updateDisplay();
     }
   }
 
@@ -139,10 +143,12 @@ void check_rotary() {
     if ((digitalRead(CLK) == 0) && (digitalRead(DT) == 1)) {
       Setpoint += increment;
       Serial.println(Setpoint);
+      updateDisplay();
     }
     if ((digitalRead(CLK) == 0) && (digitalRead(DT) == 0)) {
       Setpoint -= increment;
       Serial.println(Setpoint);
+      updateDisplay();
     }
   }
 
@@ -150,12 +156,15 @@ void check_rotary() {
     if ((digitalRead(CLK) == 1) && (digitalRead(DT) == 1)) {
       Setpoint += increment;
       Serial.println(Setpoint);
+      updateDisplay();
     }
     if ((digitalRead(CLK) == 1) && (digitalRead(DT) == 1)) {
       Setpoint -= increment;
       Serial.println(Setpoint);
+      updateDisplay();
     }
   }
+  
 }
 
 // ***************************************************** Main Program *****************************************************
@@ -195,7 +204,6 @@ void loop() {
     preCLK = digitalRead(CLK);
     preDATA = digitalRead(DT);
     TimeOfLastDebounce = millis();
-    updateDisplay();
   }
   // ************************************************
   // Future code here...
