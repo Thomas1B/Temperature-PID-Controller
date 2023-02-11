@@ -5,8 +5,8 @@ Written by Thomas Bourgeois.
 
 */
 #include <LiquidCrystal_I2C.h>
-#include <BfButton.h> // For Encoder.
-#include <PID_v1.h> // PID Controller library.
+#include <BfButton.h>  // For Encoder.
+#include <PID_v1.h>    // PID Controller library.
 
 LiquidCrystal_I2C lcd(0x27, 16, 2);
 
@@ -19,47 +19,40 @@ LiquidCrystal_I2C lcd(0x27, 16, 2);
 BfButton btn(BfButton::STANDALONE_DIGITAL, SW, true, LOW);
 
 // pins for RBG LED
-#define RED A0
-#define GREEN A1
-#define BLUE A2
+#define GREEN 6
+#define RED 7
 
 
 // ***************************************************** Variables *****************************************************
-const float temperature_range[] = {35, 100}; // allowable temperature range.
-
-// Variables for tempeture probes
-const int temperature_resitor =  10e4;
+const float temperature_range[] = { 35, 150 };  // allowable temperature range.
 
 // Variables for Encoder
 int currentStateCLK;
 int lastState;
 int curState;
-const double increment = 0.25; 
+const double increment = 0.25;
 
 // Variables for heater
 bool powerState = false;
 
 // PID Variables
-double Setpoint = temperature_range[0]; // user set temperature.
-double cur_temperature; // current temperature
-double Output; // output to heater.
-PID myPID(&cur_temperature, &Output, &Setpoint, 2,5,1, DIRECT); //Specify the links and initial tuning parameters
+double Setpoint = temperature_range[0];                            // user set temperature.
+double cur_temperature;                                            // current temperature
+double Output;                                                     // output to heater.
+PID myPID(&cur_temperature, &Output, &Setpoint, 1, 1, 1, DIRECT);  //Specify the links and initial tuning parameters
 
 
 // ***************************************************** Functions *****************************************************
 
-void led(int red, int green, int blue) {
-  /*
-    Function to color the rbg led
-
-    Parameters:
-      red, green, blue (int 0 - 255)
-  */
-  analogWrite(RED, red);
-  analogWrite(GREEN, green);
-  analogWrite(BLUE, blue);
+void green_led(bool state) {
+  // Function to turn on/off green led.
+  digitalWrite(GREEN, state);
 }
 
+void red_led(bool state) {
+  // Function to turn on/off red led.
+  digitalWrite(RED, state);
+}
 
 
 void read_button(BfButton *btn, BfButton::press_pattern_t pattern) {
@@ -75,10 +68,12 @@ void read_button(BfButton *btn, BfButton::press_pattern_t pattern) {
     case BfButton::LONG_PRESS:
       if (powerState) {
         powerState = false;
-        led(0, 0, 0);
+        green_led(false);
+        red_led(true);
       } else {
+        green_led(true);
+        red_led(false);
         powerState = true;
-        led(0, 255, 0);
       }
       break;
   }
@@ -91,7 +86,7 @@ void updateDisplay() {
   Serial.print("Set Temperature: ");
   Serial.println(Setpoint);
   Serial.print("C Temperature: ");
-  Serial.println(Setpoint, 1);    
+  Serial.println(Setpoint, 1);
 
   lcd.setCursor(0, 0);
   lcd.print("Set Temp: ");
@@ -110,7 +105,7 @@ void updateDisplay() {
 
 void setup() {
   // put your setup code here, to run once:
-  lcd.init(); // initialize the lcd
+  lcd.init();  // initialize the lcd
   lcd.backlight();
 
   Serial.begin(9600);
@@ -124,7 +119,7 @@ void setup() {
 
   pinMode(RED, OUTPUT);
   pinMode(GREEN, OUTPUT);
-  pinMode(BLUE, OUTPUT);
+  red_led(true); // initial heater is turned off.
 
   // Read the initial state of Encoder.
   lastState = digitalRead(CLK);
@@ -153,7 +148,4 @@ void loop() {
   lastState = curState;
   // ************************************************
   // Future code here...
-
-
-  
 }
