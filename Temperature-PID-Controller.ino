@@ -31,13 +31,8 @@ BfButton btn(BfButton::STANDALONE_DIGITAL, SW, true, LOW);
 const float temperature_range[] = { 35, 150 };  // allowable temperature range.
 
 // Variables for Encoder:
-const float increment = 0.5; // increment for each turn
-const float holdTime = 1000; // how long to hold the button down.
-// DO NOT CHANGE THE FOLLOWING
-int preCLK; // previous states
-int preDATA;
-long TimeOfLastDebounce = 0; // variables for debouncing.
-const long DelayofDebounce = 0.01;
+const float increment = 0.5;  // increment for each turn
+const float holdTime = 1000;  // how long to hold the button down.
 
 // Variables for heater
 bool powerState = false;
@@ -48,6 +43,13 @@ double cur_temperature;                                            // current te
 double Output;                                                     // output to heater.
 PID myPID(&cur_temperature, &Output, &Setpoint, 1, 1, 1, DIRECT);  //Specify the links and initial tuning parameters
 
+
+// Need for rotary Encoder
+// DO NOT CHANGE THE FOLLOWING
+int preCLK;  // previous states
+int preDATA;
+long TimeOfLastDebounce = 0;  // variables for debouncing.
+const long DelayofDebounce = 0.01;
 
 // ***************************************************** Functions *****************************************************
 
@@ -108,6 +110,54 @@ void updateDisplay() {
   lcd.print("C");
 }
 
+
+void check_rotary() {
+
+  if ((preCLK == 0) && (preDATA == 1)) {
+    if ((digitalRead(CLK) == 1) && (digitalRead(DT) == 0)) {
+      Setpoint += increment;
+      Serial.println(Setpoint);
+    }
+    if ((digitalRead(CLK) == 1) && (digitalRead(DT) == 1)) {
+      Setpoint -= increment;
+      Serial.println(Setpoint);
+    }
+  }
+
+  if ((preCLK == 1) && (preDATA == 0)) {
+    if ((digitalRead(CLK) == 0) && (digitalRead(DT) == 1)) {
+      Setpoint += increment;
+      Serial.println(Setpoint);
+    }
+    if ((digitalRead(CLK) == 0) && (digitalRead(DT) == 0)) {
+      Setpoint -= increment;
+      Serial.println(Setpoint);
+    }
+  }
+
+  if ((preCLK == 1) && (preDATA == 1)) {
+    if ((digitalRead(CLK) == 0) && (digitalRead(DT) == 1)) {
+      Setpoint += increment;
+      Serial.println(Setpoint);
+    }
+    if ((digitalRead(CLK) == 0) && (digitalRead(DT) == 0)) {
+      Setpoint -= increment;
+      Serial.println(Setpoint);
+    }
+  }
+
+  if ((preCLK == 0) && (preDATA == 0)) {
+    if ((digitalRead(CLK) == 1) && (digitalRead(DT) == 1)) {
+      Setpoint += increment;
+      Serial.println(Setpoint);
+    }
+    if ((digitalRead(CLK) == 1) && (digitalRead(DT) == 1)) {
+      Setpoint -= increment;
+      Serial.println(Setpoint);
+    }
+  }
+}
+
 // ***************************************************** Main Program *****************************************************
 
 void setup() {
@@ -118,18 +168,21 @@ void setup() {
   Serial.begin(9600);
   updateDisplay();
 
-  pinMode(CLK, INPUT);
-  pinMode(DT, INPUT);
+  // pinMode(CLK, INPUT);
+  // pinMode(DT, INPUT);
+  // pinMode(SW, INPUT_PULLUP);
+
+  pinMode(RED, OUTPUT);
+  pinMode(GREEN, OUTPUT);
+  red_led(true);  // initial heater is turned off.
+
   btn.onPress(read_button)  // single click
     // .onDoublePress(read_button) // double click
     .onPressFor(read_button, holdTime);  // hold for 1sec for turning on/off heating.
 
-  pinMode(RED, OUTPUT);
-  pinMode(GREEN, OUTPUT);
-  red_led(true); // initial heater is turned off.
-
   // Read the initial state of Encoder.
-  lastState = digitalRead(CLK);
+  preCLK = digitalRead(CLK);
+  preDATA = digitalRead(DT);
 }
 
 
@@ -137,22 +190,13 @@ void loop() {
 
   // ************ Encoder stuff ************
   btn.read();
-  int curState = digitalRead(CLK);
-  if (curState != lastState) {
-    if (digitalRead(DT) != curState) {  // clockwise
-      Setpoint += increment;
-    } else {  // counter-clockwise
-      Setpoint -= increment;
-    }
-    // if user goes beyond temperature allowable range.
-    if (Setpoint > temperature_range[1]) {
-      Setpoint = temperature_range[1];
-    } else if (Setpoint < temperature_range[0]) {
-      Setpoint = temperature_range[0];
-    }
+  if ((millis() - TimeOfLastDebounce) > DelayofDebounce) {
+    check_rotary();
+    preCLK = digitalRead(CLK);
+    preDATA = digitalRead(DT);
+    TimeOfLastDebounce = millis();
     updateDisplay();
   }
-  lastState = curState;
   // ************************************************
   // Future code here...
 }
