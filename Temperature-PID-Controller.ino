@@ -141,7 +141,7 @@ void loop() {
     if (Setpoint > temperature_range[1]) {
       Setpoint = temperature_range[1];
     } else if (Setpoint < temperature_range[0]) {
-      Setpoint = temperature_range[1];
+      Setpoint = temperature_range[0];
     }
     updateDisplay();
   }
