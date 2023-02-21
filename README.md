@@ -11,15 +11,9 @@ This project uses an PID controller algorithm to heat up and maintain an accurat
 
 1. Arduino Nano
 2. KY-040 Rotary Encoder Module
-3. RGB LED
-4. Resistors (3 x 220 Ohms)
-5. Temperature sensors
-6. Heater
+3. Red LED
+4. Green LED
+5. Resistors (2 x 220 Ohms)
+6. Temperature sensor
+7. Heater
 
-Code assumes pins for the Encoder are digital pins 2 for CLK, 3 for DT and 4 SW.<br>
-The RGB LED is connected to pins A0, A1 and A2.<brbr>
-
-The rotary encoder is used to change the desired temperature and to turn on/off the heater.<br>
-The LED is used notify that the heater is running or not.<br><br>
-
-Schematic diagram coming soon!
