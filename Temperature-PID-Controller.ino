@@ -31,7 +31,7 @@ BfButton btn(BfButton::STANDALONE_DIGITAL, SW, true, LOW);
 const float temperature_range[] = { 25, 150 };  // allowable temperature range.
 
 // Variables for Encoder:
-float increment = 0.5;        // increment for each turn
+float increment = 0.5;        // increment for each turn.
 const float holdTime = 1000;  // how long to hold the button down.
 
 // Variables for heater
@@ -50,8 +50,6 @@ int preCLK;  // previous states
 int preDATA;
 long TimeOfLastDebounce = 0;  // variables for debouncing.
 const long DelayofDebounce = 0.01;
-
-
 
 // ***************************************************** Main Program *****************************************************
 
