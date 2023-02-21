@@ -17,3 +17,4 @@ This project uses an PID controller algorithm to heat up and maintain an accurat
 6. Temperature sensor
 7. Heater
 
+See Code for pin setup!
