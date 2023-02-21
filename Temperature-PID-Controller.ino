@@ -51,6 +51,50 @@ int preDATA;
 long TimeOfLastDebounce = 0;  // variables for debouncing.
 const long DelayofDebounce = 0.01;
 
+
+
+// ***************************************************** Main Program *****************************************************
+
+void setup() {
+  // put your setup code here, to run once:
+  lcd.init();  // initialize the lcd
+  lcd.backlight();
+
+  Serial.begin(9600);
+  updateDisplay();
+
+  // pinMode(CLK, INPUT);
+  // pinMode(DT, INPUT);
+  // pinMode(SW, INPUT_PULLUP);
+
+  pinMode(RED, OUTPUT);
+  pinMode(GREEN, OUTPUT);
+  red_led(true);  // initial heater is turned off.
+
+  btn.onPress(read_button)               // single click
+    .onDoublePress(read_button)          // double click
+    .onPressFor(read_button, holdTime);  // hold for 1sec for turning on/off heating.
+
+  // Read the initial state of Encoder.
+  preCLK = digitalRead(CLK);
+  preDATA = digitalRead(DT);
+}
+
+
+void loop() {
+
+  // ************ Encoder stuff ************
+  btn.read();
+  if ((millis() - TimeOfLastDebounce) > DelayofDebounce) {
+    check_rotary();
+    preCLK = digitalRead(CLK);
+    preDATA = digitalRead(DT);
+    TimeOfLastDebounce = millis();
+  }
+  // ************************************************
+  // Future code here...
+}
+
 // ***************************************************** Functions *****************************************************
 
 void green_led(bool state) {
@@ -189,47 +233,4 @@ void updateDisplay() {
   }
   lcd.print((char)223);
   lcd.print("C");
-}
-
-
-// ***************************************************** Main Program *****************************************************
-
-void setup() {
-  // put your setup code here, to run once:
-  lcd.init();  // initialize the lcd
-  lcd.backlight();
-
-  Serial.begin(9600);
-  updateDisplay();
-
-  // pinMode(CLK, INPUT);
-  // pinMode(DT, INPUT);
-  // pinMode(SW, INPUT_PULLUP);
-
-  pinMode(RED, OUTPUT);
-  pinMode(GREEN, OUTPUT);
-  red_led(true);  // initial heater is turned off.
-
-  btn.onPress(read_button)               // single click
-    .onDoublePress(read_button)          // double click
-    .onPressFor(read_button, holdTime);  // hold for 1sec for turning on/off heating.
-
-  // Read the initial state of Encoder.
-  preCLK = digitalRead(CLK);
-  preDATA = digitalRead(DT);
-}
-
-
-void loop() {
-
-  // ************ Encoder stuff ************
-  btn.read();
-  if ((millis() - TimeOfLastDebounce) > DelayofDebounce) {
-    check_rotary();
-    preCLK = digitalRead(CLK);
-    preDATA = digitalRead(DT);
-    TimeOfLastDebounce = millis();
-  }
-  // ************************************************
-  // Future code here...
 }
