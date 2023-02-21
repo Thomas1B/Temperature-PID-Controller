@@ -28,10 +28,10 @@ BfButton btn(BfButton::STANDALONE_DIGITAL, SW, true, LOW);
 
 
 // ***************************************************** Variables *****************************************************
-const float temperature_range[] = { 35, 150 };  // allowable temperature range.
+const float temperature_range[] = { 25, 150 };  // allowable temperature range.
 
 // Variables for Encoder:
-const float increment = 0.5;  // increment for each turn
+float increment = 0.5;        // increment for each turn
 const float holdTime = 1000;  // how long to hold the button down.
 
 // Variables for heater
@@ -74,6 +74,14 @@ void read_button(BfButton *btn, BfButton::press_pattern_t pattern) {
       updateDisplay();
       break;
 
+    case BfButton::DOUBLE_PRESS:
+      if (increment == 0.5) {
+        increment = 10.0;
+      } else {
+        increment = 0.5;
+      }
+      break;
+
     case BfButton::LONG_PRESS:
       if (powerState) {
         powerState = false;
@@ -88,6 +96,67 @@ void read_button(BfButton *btn, BfButton::press_pattern_t pattern) {
   }
 }
 
+void check_rotary() {
+
+  float dummy_temp = Setpoint;
+  float var_Setpoint = Setpoint;  // temporary variable for allowable temperature range
+
+  if ((preCLK == 0) && (preDATA == 1)) {
+    if ((digitalRead(CLK) == 1) && (digitalRead(DT) == 0)) {
+      var_Setpoint += increment;
+      Serial.println(Setpoint);
+    }
+    if ((digitalRead(CLK) == 1) && (digitalRead(DT) == 1)) {
+      var_Setpoint -= increment;
+      Serial.println(Setpoint);
+    }
+  }
+
+  if ((preCLK == 1) && (preDATA == 0)) {
+    if ((digitalRead(CLK) == 0) && (digitalRead(DT) == 1)) {
+      var_Setpoint += increment;
+      Serial.println(Setpoint);
+    }
+    if ((digitalRead(CLK) == 0) && (digitalRead(DT) == 0)) {
+      var_Setpoint -= increment;
+      Serial.println(Setpoint);
+    }
+  }
+
+  if ((preCLK == 1) && (preDATA == 1)) {
+    if ((digitalRead(CLK) == 0) && (digitalRead(DT) == 1)) {
+      var_Setpoint += increment;
+      Serial.println(Setpoint);
+    }
+    if ((digitalRead(CLK) == 0) && (digitalRead(DT) == 0)) {
+      var_Setpoint -= increment;
+      Serial.println(Setpoint);
+    }
+  }
+
+  if ((preCLK == 0) && (preDATA == 0)) {
+    if ((digitalRead(CLK) == 1) && (digitalRead(DT) == 1)) {
+      var_Setpoint += increment;
+      Serial.println(Setpoint);
+    }
+    if ((digitalRead(CLK) == 1) && (digitalRead(DT) == 1)) {
+      var_Setpoint -= increment;
+      Serial.println(Setpoint);
+    }
+  }
+
+  if (var_Setpoint != Setpoint) {
+    if (var_Setpoint > temperature_range[1]) {
+      var_Setpoint = temperature_range[1];
+    } else if (var_Setpoint < temperature_range[0]) {
+      var_Setpoint = temperature_range[0];
+    }
+
+    Setpoint = var_Setpoint;
+    updateDisplay();
+  }
+}
+
 
 void updateDisplay() {
   // Function to update display
@@ -97,75 +166,31 @@ void updateDisplay() {
   Serial.print("C Temperature: ");
   Serial.println(Setpoint, 1);
 
+  lcd.clear();
+
   lcd.setCursor(0, 0);
-  lcd.print("Set Temp: ");
+  lcd.print("Set: ");
   lcd.print(Setpoint, 1);
+  if (Setpoint >= 100) {
+    lcd.setCursor(11, 0);
+  } else {
+    lcd.setCursor(10, 0);
+  }
   lcd.print((char)223);
   lcd.print("C");
 
   lcd.setCursor(0, 1);
-  lcd.print("Cur Temp: ");
+  lcd.print("Cur: ");
   lcd.print(Setpoint, 1);
+  if (Setpoint >= 100) {
+    lcd.setCursor(11, 1);
+  } else {
+    lcd.setCursor(10, 1);
+  }
   lcd.print((char)223);
   lcd.print("C");
 }
 
-
-void check_rotary() {
-
-  if ((preCLK == 0) && (preDATA == 1)) {
-    if ((digitalRead(CLK) == 1) && (digitalRead(DT) == 0)) {
-      Setpoint += increment;
-      Serial.println(Setpoint);
-      updateDisplay();
-    }
-    if ((digitalRead(CLK) == 1) && (digitalRead(DT) == 1)) {
-      Setpoint -= increment;
-      Serial.println(Setpoint);
-      updateDisplay();
-    }
-  }
-
-  if ((preCLK == 1) && (preDATA == 0)) {
-    if ((digitalRead(CLK) == 0) && (digitalRead(DT) == 1)) {
-      Setpoint += increment;
-      Serial.println(Setpoint);
-      updateDisplay();
-    }
-    if ((digitalRead(CLK) == 0) && (digitalRead(DT) == 0)) {
-      Setpoint -= increment;
-      Serial.println(Setpoint);
-      updateDisplay();
-    }
-  }
-
-  if ((preCLK == 1) && (preDATA == 1)) {
-    if ((digitalRead(CLK) == 0) && (digitalRead(DT) == 1)) {
-      Setpoint += increment;
-      Serial.println(Setpoint);
-      updateDisplay();
-    }
-    if ((digitalRead(CLK) == 0) && (digitalRead(DT) == 0)) {
-      Setpoint -= increment;
-      Serial.println(Setpoint);
-      updateDisplay();
-    }
-  }
-
-  if ((preCLK == 0) && (preDATA == 0)) {
-    if ((digitalRead(CLK) == 1) && (digitalRead(DT) == 1)) {
-      Setpoint += increment;
-      Serial.println(Setpoint);
-      updateDisplay();
-    }
-    if ((digitalRead(CLK) == 1) && (digitalRead(DT) == 1)) {
-      Setpoint -= increment;
-      Serial.println(Setpoint);
-      updateDisplay();
-    }
-  }
-  
-}
 
 // ***************************************************** Main Program *****************************************************
 
@@ -185,8 +210,8 @@ void setup() {
   pinMode(GREEN, OUTPUT);
   red_led(true);  // initial heater is turned off.
 
-  btn.onPress(read_button)  // single click
-    // .onDoublePress(read_button) // double click
+  btn.onPress(read_button)               // single click
+    .onDoublePress(read_button)          // double click
     .onPressFor(read_button, holdTime);  // hold for 1sec for turning on/off heating.
 
   // Read the initial state of Encoder.
