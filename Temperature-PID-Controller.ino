@@ -26,6 +26,8 @@ BfButton btn(BfButton::STANDALONE_DIGITAL, SW, true, LOW);
 #define GREEN 6
 #define RED 7
 
+#define Vin A7
+
 
 // ***************************************************** Variables *****************************************************
 const float temperature_range[] = { 25, 150 };  // allowable temperature range.
@@ -51,6 +53,8 @@ int preDATA;
 long TimeOfLastDebounce = 0;  // variables for debouncing.
 const long DelayofDebounce = 0.01;
 
+float voltage = 0;
+
 // ***************************************************** Main Program *****************************************************
 
 void setup() {
@@ -61,9 +65,11 @@ void setup() {
   Serial.begin(9600);
   updateDisplay();
 
-  // pinMode(CLK, INPUT);
-  // pinMode(DT, INPUT);
-  // pinMode(SW, INPUT_PULLUP);
+  pinMode(CLK, INPUT);
+  pinMode(DT, INPUT);
+  pinMode(SW, INPUT_PULLUP);
+  pinMode(Vin, INPUT);
+
 
   pinMode(RED, OUTPUT);
   pinMode(GREEN, OUTPUT);
@@ -146,44 +152,36 @@ void check_rotary() {
   if ((preCLK == 0) && (preDATA == 1)) {
     if ((digitalRead(CLK) == 1) && (digitalRead(DT) == 0)) {
       var_Setpoint += increment;
-      Serial.println(Setpoint);
     }
     if ((digitalRead(CLK) == 1) && (digitalRead(DT) == 1)) {
       var_Setpoint -= increment;
-      Serial.println(Setpoint);
     }
   }
 
   if ((preCLK == 1) && (preDATA == 0)) {
     if ((digitalRead(CLK) == 0) && (digitalRead(DT) == 1)) {
       var_Setpoint += increment;
-      Serial.println(Setpoint);
     }
     if ((digitalRead(CLK) == 0) && (digitalRead(DT) == 0)) {
       var_Setpoint -= increment;
-      Serial.println(Setpoint);
     }
   }
 
   if ((preCLK == 1) && (preDATA == 1)) {
     if ((digitalRead(CLK) == 0) && (digitalRead(DT) == 1)) {
       var_Setpoint += increment;
-      Serial.println(Setpoint);
     }
     if ((digitalRead(CLK) == 0) && (digitalRead(DT) == 0)) {
       var_Setpoint -= increment;
-      Serial.println(Setpoint);
     }
   }
 
   if ((preCLK == 0) && (preDATA == 0)) {
     if ((digitalRead(CLK) == 1) && (digitalRead(DT) == 1)) {
       var_Setpoint += increment;
-      Serial.println(Setpoint);
     }
     if ((digitalRead(CLK) == 1) && (digitalRead(DT) == 1)) {
       var_Setpoint -= increment;
-      Serial.println(Setpoint);
     }
   }
 
@@ -207,6 +205,13 @@ void updateDisplay() {
   Serial.println(Setpoint);
   Serial.print("C Temperature: ");
   Serial.println(Setpoint, 1);
+  Serial.print("Voltage: ");
+
+
+  voltage = analogRead(Vin);
+  Serial.println(voltage);
+  Serial.println();
+
 
   lcd.clear();
 
