@@ -13,8 +13,7 @@ This project uses an PID controller algorithm to heat up and maintain an accurat
 2. KY-040 Rotary Encoder Module
 3. Red LED
 4. Green LED
-5. Resistors (2 x 220 Ohms)
-6. Temperature sensor
-7. Heater
+5. Temperature sensor, LM19
+6. Heater
 
 See Code for pin setup!
