@@ -12,7 +12,7 @@ LM19 Datasheet: https://www.ti.com/lit/ds/symlink/lm19.pdf
 
 
 
-// ******* Program sett up *******
+// ******* Program set up *******
 void setup() {
   // put your setup code here, to run once:
   pinMode(sensor_pin, INPUT);
@@ -21,6 +21,7 @@ void setup() {
 
 
 // ******* main program *******
+
 int counter = 1;
 void loop() {
 
@@ -33,7 +34,7 @@ void loop() {
   Serial.print("Raw Value: ");
   Serial.println(val);
   Serial.print("Mapped = ");
-  Serial.println(val * 5/1023);
+  Serial.println(val * 5 / 1023);
 
   double temp = get_temperature(sensor_pin);
   Serial.print("Temperature: ");
@@ -59,7 +60,7 @@ double get_temperature(int pin) {
   */
 
   double Vo = analogRead(pin);
-  Vo = Vo * 5/1023; // mapping value to a output voltage.
+  Vo = Vo * 5 / 1023;  // mapping value to a output voltage.
 
   // Constants to simplify the equation
   double c1 = -1481.96;
