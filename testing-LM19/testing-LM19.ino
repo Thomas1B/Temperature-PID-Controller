@@ -7,6 +7,7 @@ LM19 Datasheet: https://www.ti.com/lit/ds/symlink/lm19.pdf
 
 
 // ****** Defining pins ******
+
 #define sensor_pin A0
 
 
