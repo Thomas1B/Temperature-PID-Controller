@@ -17,6 +17,7 @@ void setup() {
   // put your setup code here, to run once:
   pinMode(sensor_pin, INPUT);
   Serial.begin(9600);
+  Serial.println("\nProgram Starting...\n");
 }
 
 
@@ -33,7 +34,7 @@ void loop() {
 
   Serial.print("Raw Value: ");
   Serial.println(val);
-  Serial.print("Mapped = ");
+  Serial.print("Voltage = ");
   Serial.println(val * 5 / 1023);
 
   double temp = get_temperature(sensor_pin);
@@ -41,7 +42,7 @@ void loop() {
   Serial.println(temp);
 
   Serial.println();
-  delay(1500);
+  delay(2000);
 }
 
 // ******* Functoins *******
