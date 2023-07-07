@@ -16,3 +16,9 @@ This project uses a PID controller algorithm to heat up a heating cartridge and 
 5. Solid State Relay
 6. OLED Screen
 
+
+### Controls
+
+1. Single-press to reset set temperature.
+2. Double-press increase increment step for changing set temperature.
+3. Press & hold to start up heating process.
