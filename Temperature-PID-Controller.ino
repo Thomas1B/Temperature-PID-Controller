@@ -36,7 +36,7 @@ BfButton btn(BfButton::STANDALONE_DIGITAL, SW, true, LOW);  // defining Encoder 
 // Declaring the OLED object.
 // Data pin on arduino UNO/NANO: A4(SDA), A5(SCL)
 #define SCREEN_WIDTH 128  // OLED display width, in pixels
-#define SCREEN_HEIGHT 32  // OLED display height, in pixels
+#define SCREEN_HEIGHT 64  // OLED display height, in pixels
 #define SCREEN_ADDRESS 0x3C
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire);
 
@@ -251,22 +251,21 @@ void set_up_OLED() {
 
   // SSD1306_SWITCHCAPVCC = generate display voltage from 3.3V internally
   if (!display.begin(SSD1306_SWITCHCAPVCC, SCREEN_ADDRESS)) {
-    Serial.println("SSD1306 allocation failed");
-    for (;;)
-      ;  // Don't proceed, loop forever
+    Serial.println("Failed to connect to OLED...");
+    while (true) {
+      continue;
+    }
   } else {
-    Serial.println("SSD1306 Connection Successful!");  // successful msg to terminal
     // Setting default text size and color
-    display.setTextSize(1);
+    display.setTextSize(2);
     display.setTextColor(WHITE);
-
-    // Displaying welcome messege
     display.clearDisplay();
-    // display.print("Welcome to the\n");
-    // display.print("Temperature\nPID Controller!");
-    // String text = String("Welcome to the\nTemperature\nPID Controller!");
-    char* text = "Welcome to the\nTemperature\nPID Controller!";
-    OLED_msg(text);
+
+    // Displaying startup messege
+    display.write("Starting");
+    display.write("\nPID");
+    display.write("\nController");
+    display.display();
     delay(5000);
     OLED_clear();
   }
@@ -314,6 +313,7 @@ String double_to_string(double value, int decimal_places = 2) {
   return String(buffer);
 }
 
+
 void updateInfo() {
   /*
   Function to update the display with temperature and setpoint.
@@ -322,14 +322,13 @@ void updateInfo() {
   display.setCursor(0, 0);
 
   // updating temperature
-  String text = "Temp: " + double_to_string(cur_temperature, 1);
+  String text = "T: " + double_to_string(cur_temperature, 1);
   display.print(text);
   display.write(247);
   display.print("C");
   // display.display();
 
-  // display.setCursor(0, 16);
-  text = "\nSet Temp: " + double_to_string(Setpoint, 1);
+  text = "\n\nSet T:\n" + double_to_string(Setpoint, 1);
   display.print(text);
   display.write(247);
   display.print("C");
