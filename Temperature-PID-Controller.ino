@@ -12,25 +12,37 @@ Written by Thomas Bourgeois.
 #include <BfButton.h>  // For Encoder.
 #include <PID_v1.h>    // PID Controller library.
 
-LiquidCrystal_I2C lcd(0x27, 16, 2);
+#include <SPI.h>
+#include <Wire.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
+
+
 
 // ***************************************************** Defining Pins *****************************************************
 
-// pins for encoder
+// pins for Rotary Encoder
 #define CLK 2
 #define DT 3
 #define SW 4
-BfButton btn(BfButton::STANDALONE_DIGITAL, SW, true, LOW);
+BfButton btn(BfButton::STANDALONE_DIGITAL, SW, true, LOW);  // defining Encoder button object
 
-// pins for RBG LED
-#define GREEN 6
-#define RED 7
+// pins for LEDs
+#define GREEN_LED 11
+#define RED_LED 12
 
-#define Vin A7
+#define LM19_pin A0  // Reference voltage pin
+
+// Declaring the OLED object.
+// Data pin on arduino UNO/NANO: A4(SDA), A5(SCL)
+#define SCREEN_WIDTH 128  // OLED display width, in pixels
+#define SCREEN_HEIGHT 32  // OLED display height, in pixels
+#define SCREEN_ADDRESS 0x3C
+Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire);
 
 
 // ***************************************************** Variables *****************************************************
-const float temperature_range[] = { 25, 150 };  // allowable temperature range.
+const float temperature_range[] = { 25, 200 };  // allowable temperature range.
 
 // Variables for Encoder:
 float increment = 0.5;        // increment for each turn.
@@ -40,7 +52,9 @@ const float holdTime = 1000;  // how long to hold the button down.
 bool powerState = false;
 
 // PID Variables
-double Setpoint = temperature_range[0];                            // user set temperature.
+double const start_Setpoint = 100.0;  // user set temperature.
+// double const start_Setpoint = temperature_range[0];                            // user set temperature.
+double Setpoint = start_Setpoint;                                  // user set temperature.
 double cur_temperature;                                            // current temperature
 double Output;                                                     // output to heater.
 PID myPID(&cur_temperature, &Output, &Setpoint, 1, 1, 1, DIRECT);  //Specify the links and initial tuning parameters
@@ -49,39 +63,39 @@ PID myPID(&cur_temperature, &Output, &Setpoint, 1, 1, 1, DIRECT);  //Specify the
 // Need for rotary Encoder
 // DO NOT CHANGE THE FOLLOWING
 int preCLK;  // previous states
-int preDATA;
+int pRED_LEDATA;
 long TimeOfLastDebounce = 0;  // variables for debouncing.
 const long DelayofDebounce = 0.01;
 
-float voltage = 0;
+// delay time for reading temperaturez
+long TimeOfLastTempRead = 0;
+const long DelayofTempRead = 2000;  // milliseconds.
 
 // ***************************************************** Main Program *****************************************************
 
 void setup() {
   // put your setup code here, to run once:
-  lcd.init();  // initialize the lcd
-  lcd.backlight();
 
-  Serial.begin(9600);
-  updateDisplay();
+  Serial.begin(9600);  // Serial to print messages.
 
   pinMode(CLK, INPUT);
   pinMode(DT, INPUT);
   pinMode(SW, INPUT_PULLUP);
-  pinMode(Vin, INPUT);
+  pinMode(LM19_pin, INPUT);
 
+  pinMode(RED_LED, OUTPUT);
+  pinMode(GREEN_LED, OUTPUT);
+  RED_LED_led(true);  // initial heater is turned off.
 
-  pinMode(RED, OUTPUT);
-  pinMode(GREEN, OUTPUT);
-  red_led(true);  // initial heater is turned off.
-
-  btn.onPress(read_button)               // single click
-    .onDoublePress(read_button)          // double click
-    .onPressFor(read_button, holdTime);  // hold for 1sec for turning on/off heating.
+  btn.onPress(read_encoder_btn)               // single click
+    .onDoublePress(read_encoder_btn)          // double click
+    .onPressFor(read_encoder_btn, holdTime);  // hold for 1sec for turning on/off heating.
 
   // Read the initial state of Encoder.
   preCLK = digitalRead(CLK);
-  preDATA = digitalRead(DT);
+  pRED_LEDATA = digitalRead(DT);
+
+  set_up_OLED();  // OLED screen for displaying information.
 }
 
 
@@ -89,37 +103,50 @@ void loop() {
 
   // ************ Encoder stuff ************
   btn.read();
-  if ((millis() - TimeOfLastDebounce) > DelayofDebounce) {
+  if ((millis() - TimeOfLastDebounce) >= DelayofDebounce) {
     check_rotary();
     preCLK = digitalRead(CLK);
-    preDATA = digitalRead(DT);
+    pRED_LEDATA = digitalRead(DT);
     TimeOfLastDebounce = millis();
   }
-  // ************************************************
-  // Future code here...
+
+  if ((millis() - TimeOfLastTempRead) >= DelayofTempRead) {
+    TimeOfLastTempRead = millis();
+    cur_temperature = get_temperature(LM19_pin);
+    updateInfo();
+  }
 }
 
 // ***************************************************** Functions *****************************************************
 
-void green_led(bool state) {
-  // Function to turn on/off green led.
-  digitalWrite(GREEN, state);
+
+
+void GREEN_LED_led(bool state) {
+  // Function to turn on/off GREEN_LED led.
+  digitalWrite(GREEN_LED, state);
 }
 
-void red_led(bool state) {
-  // Function to turn on/off red led.
-  digitalWrite(RED, state);
+void RED_LED_led(bool state) {
+  // Function to turn on/off RED_LED led.
+  digitalWrite(RED_LED, state);
 }
 
 
-void read_button(BfButton *btn, BfButton::press_pattern_t pattern) {
-  // Function to read button on the Encoder.
+void read_encoder_btn(BfButton* btn, BfButton::press_pattern_t pattern) {
+  /*
+    Function to handle the button on the Encoder.
+
+      Parameters:
+        btn: BfButton object.
+        pattern: click pattern
+
+  */
 
   switch (pattern) {
 
     case BfButton::SINGLE_PRESS:
-      Setpoint = temperature_range[0];
-      updateDisplay();
+      Setpoint = start_Setpoint;
+      updateInfo();
       break;
 
     case BfButton::DOUBLE_PRESS:
@@ -133,11 +160,11 @@ void read_button(BfButton *btn, BfButton::press_pattern_t pattern) {
     case BfButton::LONG_PRESS:
       if (powerState) {
         powerState = false;
-        green_led(false);
-        red_led(true);
+        GREEN_LED_led(false);
+        RED_LED_led(true);
       } else {
-        green_led(true);
-        red_led(false);
+        GREEN_LED_led(true);
+        RED_LED_led(false);
         powerState = true;
       }
       break;
@@ -149,7 +176,7 @@ void check_rotary() {
   float dummy_temp = Setpoint;
   float var_Setpoint = Setpoint;  // temporary variable for allowable temperature range
 
-  if ((preCLK == 0) && (preDATA == 1)) {
+  if ((preCLK == 0) && (pRED_LEDATA == 1)) {
     if ((digitalRead(CLK) == 1) && (digitalRead(DT) == 0)) {
       var_Setpoint += increment;
     }
@@ -158,7 +185,7 @@ void check_rotary() {
     }
   }
 
-  if ((preCLK == 1) && (preDATA == 0)) {
+  if ((preCLK == 1) && (pRED_LEDATA == 0)) {
     if ((digitalRead(CLK) == 0) && (digitalRead(DT) == 1)) {
       var_Setpoint += increment;
     }
@@ -167,7 +194,7 @@ void check_rotary() {
     }
   }
 
-  if ((preCLK == 1) && (preDATA == 1)) {
+  if ((preCLK == 1) && (pRED_LEDATA == 1)) {
     if ((digitalRead(CLK) == 0) && (digitalRead(DT) == 1)) {
       var_Setpoint += increment;
     }
@@ -176,7 +203,7 @@ void check_rotary() {
     }
   }
 
-  if ((preCLK == 0) && (preDATA == 0)) {
+  if ((preCLK == 0) && (pRED_LEDATA == 0)) {
     if ((digitalRead(CLK) == 1) && (digitalRead(DT) == 1)) {
       var_Setpoint += increment;
     }
@@ -193,47 +220,118 @@ void check_rotary() {
     }
 
     Setpoint = var_Setpoint;
-    updateDisplay();
+    updateInfo();
+  }
+}
+
+void OLED_msg(String text, boolean clear_display = true) {
+  /*
+    Function to display a message on the OLED Screen.
+  */
+
+  if (clear_display) {
+    OLED_clear();
+  };
+  display.println(text);
+  display.display();
+}
+
+
+void OLED_clear() {
+  // Function to clear the OLED screen.
+  display.clearDisplay();
+  display.display();
+  display.setCursor(0, 0);
+}
+
+void set_up_OLED() {
+  /* 
+    Function to set up the OLED and check if connection successful.
+  */
+
+  // SSD1306_SWITCHCAPVCC = generate display voltage from 3.3V internally
+  if (!display.begin(SSD1306_SWITCHCAPVCC, SCREEN_ADDRESS)) {
+    Serial.println("SSD1306 allocation failed");
+    for (;;)
+      ;  // Don't proceed, loop forever
+  } else {
+    Serial.println("SSD1306 Connection Successful!");  // successful msg to terminal
+    // Setting default text size and color
+    display.setTextSize(1);
+    display.setTextColor(WHITE);
+
+    // Displaying welcome messege
+    display.clearDisplay();
+    // display.print("Welcome to the\n");
+    // display.print("Temperature\nPID Controller!");
+    // String text = String("Welcome to the\nTemperature\nPID Controller!");
+    char* text = "Welcome to the\nTemperature\nPID Controller!";
+    OLED_msg(text);
+    delay(5000);
+    OLED_clear();
   }
 }
 
 
-void updateDisplay() {
-  // Function to update display
+double get_temperature(int pin) {
+  /*
+  Function to convert the output voltage of a LM19 Sensor to temperature in Celsius.
 
-  Serial.print("Set Temperature: ");
-  Serial.println(Setpoint);
-  Serial.print("C Temperature: ");
-  Serial.println(Setpoint, 1);
-  Serial.print("Voltage: ");
+  Parameter:
+    Pin - int: analog pin to LM19 Sensor.
 
+  Returns:
+    temperature as a double.
 
-  voltage = analogRead(Vin);
-  Serial.println(voltage);
-  Serial.println();
+  See https://www.ti.com/lit/ds/symlink/lm19.pdf, page 2 for the equation.
+  */
 
+  double Vo = analogRead(pin);
+  Vo = Vo * 5 / 1023;  // mapping value to a output voltage.
 
-  lcd.clear();
+  // Constants to simplify the equation
+  double c1 = -1481.96;
+  double c2 = 2.1962e6;
+  double c3 = 1.8639;
+  double c4 = 3.88e-6;
 
-  lcd.setCursor(0, 0);
-  lcd.print("Set: ");
-  lcd.print(Setpoint, 1);
-  if (Setpoint >= 100) {
-    lcd.setCursor(11, 0);
-  } else {
-    lcd.setCursor(10, 0);
-  }
-  lcd.print((char)223);
-  lcd.print("C");
+  double temperature = c1 + sqrt(c2 + ((c3 - Vo) / c4));
+  // temperature = (temperature - 32) * 5 / 9; # converting to celsius.
 
-  lcd.setCursor(0, 1);
-  lcd.print("Cur: ");
-  lcd.print(Setpoint, 1);
-  if (Setpoint >= 100) {
-    lcd.setCursor(11, 1);
-  } else {
-    lcd.setCursor(10, 1);
-  }
-  lcd.print((char)223);
-  lcd.print("C");
+  return temperature;
+}
+
+String double_to_string(double value, int decimal_places = 2) {
+  /* 
+  Function to convert a double to a String
+
+    Parameters:
+      value: double number to convert.
+      round: what decimal place to round to
+  */
+  char buffer[10];
+  dtostrf(value, 4, decimal_places, buffer);
+  return String(buffer);
+}
+
+void updateInfo() {
+  /*
+  Function to update the display with temperature and setpoint.
+  */
+  display.clearDisplay();
+  display.setCursor(0, 0);
+
+  // updating temperature
+  String text = "Temp: " + double_to_string(cur_temperature, 1);
+  display.print(text);
+  display.write(247);
+  display.print("C");
+  // display.display();
+
+  // display.setCursor(0, 16);
+  text = "\nSet Temp: " + double_to_string(Setpoint, 1);
+  display.print(text);
+  display.write(247);
+  display.print("C");
+  display.display();
 }
