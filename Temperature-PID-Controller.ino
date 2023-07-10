@@ -78,14 +78,15 @@ void setup() {
 
   Serial.begin(9600);  // Serial to print messages.
 
-  pinMode(CLK, INPUT);
+  /* Defining pinModes */
+  pinMode(CLK, INPUT); // Encoder
   pinMode(DT, INPUT);
   pinMode(SW, INPUT_PULLUP);
-  pinMode(LM19_pin, INPUT);
+  
+  pinMode(LM19_pin, INPUT); // LM19 Temp Sensor
 
-  pinMode(RED_LED, OUTPUT);
+  pinMode(RED_LED, OUTPUT); // LEDs
   pinMode(GREEN_LED, OUTPUT);
-  RED_LED_led(true);  // initial heater is turned off.
 
   btn.onPress(read_encoder_btn)               // single click
     .onDoublePress(read_encoder_btn)          // double click
@@ -96,6 +97,7 @@ void setup() {
   pRED_LEDATA = digitalRead(DT);
 
   set_up_OLED();  // OLED screen for displaying information.
+  RED_LED_led(true);  // initial heater is turned off.
 }
 
 
