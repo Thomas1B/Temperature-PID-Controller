@@ -286,7 +286,7 @@ double get_temperature(int pin) {
   */
 
   double Vo = analogRead(pin);
-  Vo = Vo * 5 / 1023;  // mapping value to a output voltage.
+  Vo = Vo * 5.0 / 1023.0;  // mapping value to a output voltage.
 
   // Constants to simplify the equation
   double c1 = -1481.96;
@@ -294,10 +294,7 @@ double get_temperature(int pin) {
   double c3 = 1.8639;
   double c4 = 3.88e-6;
 
-  double temperature = c1 + sqrt(c2 + ((c3 - Vo) / c4));
-  // temperature = (temperature - 32) * 5 / 9; # converting to celsius.
-
-  return temperature;
+  return c1 + sqrt(c2 + ((c3 - Vo) / c4));
 }
 
 String double_to_string(double value, int decimal_places = 2) {
@@ -326,7 +323,6 @@ void updateInfo() {
   display.print(text);
   display.write(247);
   display.print("C");
-  // display.display();
 
   text = "\n\nSet T:\n" + double_to_string(Setpoint, 1);
   display.print(text);
