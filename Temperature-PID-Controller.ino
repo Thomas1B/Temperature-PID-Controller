@@ -22,16 +22,16 @@ Written by Thomas Bourgeois.
 // ***************************************************** Defining Pins *****************************************************
 
 // pins for Rotary Encoder
-#define CLK 2
-#define DT 3
-#define SW 4
+#define CLK 6
+#define DT 7
+#define SW 8
 BfButton btn(BfButton::STANDALONE_DIGITAL, SW, true, LOW);  // defining Encoder button object
 
 // pins for LEDs
-#define GREEN_LED 11
-#define RED_LED 12
+#define RED_LED 2
+#define GREEN_LED 3
 
-#define LM19_pin A0  // Reference voltage pin
+#define LM19_pin A7  // Reference voltage pin
 
 // Declaring the OLED object.
 // Data pin on arduino UNO/NANO: A4(SDA), A5(SCL)
@@ -63,7 +63,7 @@ PID myPID(&cur_temperature, &Output, &Setpoint, 1, 1, 1, DIRECT);  //Specify the
 // Need for rotary Encoder
 // DO NOT CHANGE THE FOLLOWING
 int preCLK;  // previous states
-int pRED_LEDATA;
+int preDT;
 long TimeOfLastDebounce = 0;  // variables for debouncing.
 const long DelayofDebounce = 0.01;
 
@@ -79,13 +79,13 @@ void setup() {
   Serial.begin(9600);  // Serial to print messages.
 
   /* Defining pinModes */
-  pinMode(CLK, INPUT); // Encoder
+  pinMode(CLK, INPUT);  // Encoder
   pinMode(DT, INPUT);
   pinMode(SW, INPUT_PULLUP);
-  
-  pinMode(LM19_pin, INPUT); // LM19 Temp Sensor
 
-  pinMode(RED_LED, OUTPUT); // LEDs
+  pinMode(LM19_pin, INPUT);  // LM19 Temp Sensor
+
+  pinMode(RED_LED, OUTPUT);  // LEDs
   pinMode(GREEN_LED, OUTPUT);
 
   btn.onPress(read_encoder_btn)               // single click
@@ -94,9 +94,9 @@ void setup() {
 
   // Read the initial state of Encoder.
   preCLK = digitalRead(CLK);
-  pRED_LEDATA = digitalRead(DT);
+  preDT = digitalRead(DT);
 
-  set_up_OLED();  // OLED screen for displaying information.
+  set_up_OLED();      // OLED screen for displaying information.
   RED_LED_led(true);  // initial heater is turned off.
 }
 
@@ -108,7 +108,7 @@ void loop() {
   if ((millis() - TimeOfLastDebounce) >= DelayofDebounce) {
     check_rotary();
     preCLK = digitalRead(CLK);
-    pRED_LEDATA = digitalRead(DT);
+    preDT = digitalRead(DT);
     TimeOfLastDebounce = millis();
   }
 
@@ -178,7 +178,7 @@ void check_rotary() {
   float dummy_temp = Setpoint;
   float var_Setpoint = Setpoint;  // temporary variable for allowable temperature range
 
-  if ((preCLK == 0) && (pRED_LEDATA == 1)) {
+  if ((preCLK == 0) && (preDT == 1)) {
     if ((digitalRead(CLK) == 1) && (digitalRead(DT) == 0)) {
       var_Setpoint += increment;
     }
@@ -187,7 +187,7 @@ void check_rotary() {
     }
   }
 
-  if ((preCLK == 1) && (pRED_LEDATA == 0)) {
+  if ((preCLK == 1) && (preDT == 0)) {
     if ((digitalRead(CLK) == 0) && (digitalRead(DT) == 1)) {
       var_Setpoint += increment;
     }
@@ -196,7 +196,7 @@ void check_rotary() {
     }
   }
 
-  if ((preCLK == 1) && (pRED_LEDATA == 1)) {
+  if ((preCLK == 1) && (preDT == 1)) {
     if ((digitalRead(CLK) == 0) && (digitalRead(DT) == 1)) {
       var_Setpoint += increment;
     }
@@ -205,7 +205,7 @@ void check_rotary() {
     }
   }
 
-  if ((preCLK == 0) && (pRED_LEDATA == 0)) {
+  if ((preCLK == 0) && (preDT == 0)) {
     if ((digitalRead(CLK) == 1) && (digitalRead(DT) == 1)) {
       var_Setpoint += increment;
     }
@@ -320,9 +320,15 @@ void updateInfo() {
   display.clearDisplay();
   display.setCursor(0, 0);
 
+  String text = "";
+
   // updating temperature
-  String text = "T: " + double_to_string(cur_temperature, 1);
-  display.print(text);
+  if (cur_temperature > 0) {
+    text = "T: " + double_to_string(cur_temperature, 1);
+    display.print(text);
+  } else {
+    display.print("T: < 0");
+  }
   display.write(247);
   display.print("C");
 
