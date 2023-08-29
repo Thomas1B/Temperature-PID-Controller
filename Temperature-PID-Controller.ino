@@ -10,13 +10,12 @@ Written by Thomas Bourgeois.
 
 #include <LiquidCrystal_I2C.h>
 #include <BfButton.h>  // For Encoder.
-#include <PID_v1.h>    // PID Controller library.
-
 #include <SPI.h>
 #include <Wire.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
 
+#include <PID_v1.h>  // PID Controller library.
 
 
 // ***************************************************** Defining Pins *****************************************************
@@ -42,6 +41,8 @@ Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire);
 
 
 // ***************************************************** Variables *****************************************************
+
+const float Vref = 4.68;                        // Reference voltage lm19 is using.
 const float temperature_range[] = { 25, 200 };  // allowable temperature range.
 
 // Variables for Encoder:
@@ -52,16 +53,18 @@ const float holdTime = 1000;  // how long to hold the button down.
 bool powerState = false;
 
 // PID Variables
-double const start_Setpoint = 100.0;  // user set temperature.
-// double const start_Setpoint = temperature_range[0];                            // user set temperature.
-double Setpoint = start_Setpoint;                                  // user set temperature.
-double cur_temperature;                                            // current temperature
-double Output;                                                     // output to heater.
-PID myPID(&cur_temperature, &Output, &Setpoint, 1, 1, 1, DIRECT);  //Specify the links and initial tuning parameters
+double const start_Setpoint = 100.0;                               // user set temperature.
+PID myPID(&cur_temperature, &Output, &Setpoint, 1, 1, 1, DIRECT);  // Specify the links and initial tuning parameters
 
+const long DelayofTempRead = 2000;  // milliseconds.
+
+// ************************ DO NOT CHNAGE THESE VARIABLES ************************
+
+double Setpoint = start_Setpoint;  // user set temperature.
+double cur_temperature;            // current temperature
+double Output;                     // output to heater.
 
 // Need for rotary Encoder
-// DO NOT CHANGE THE FOLLOWING
 int preCLK;  // previous states
 int preDT;
 long TimeOfLastDebounce = 0;  // variables for debouncing.
@@ -69,9 +72,8 @@ const long DelayofDebounce = 0.01;
 
 // delay time for reading temperaturez
 long TimeOfLastTempRead = 0;
-const long DelayofTempRead = 2000;  // milliseconds.
-
 // ***************************************************** Main Program *****************************************************
+void (*resetFunc)(void) = 0;
 
 void setup() {
   // put your setup code here, to run once:
@@ -99,6 +101,7 @@ void setup() {
   set_up_OLED();      // OLED screen for displaying information.
   RED_LED_led(true);  // initial heater is turned off.
 }
+
 
 
 void loop() {
@@ -238,7 +241,6 @@ void OLED_msg(String text, boolean clear_display = true) {
   display.display();
 }
 
-
 void OLED_clear() {
   // Function to clear the OLED screen.
   display.clearDisplay();
@@ -288,9 +290,9 @@ double get_temperature(int pin) {
   */
 
   double Vo = analogRead(pin);
-  Vo = Vo * 5.0 / 1023.0;  // mapping value to a output voltage.
+  Vo = Vo * Vref / 1023.0;  // mapping value to a output voltage.
 
-  // Constants to simplify the equation
+  // // Constants to simplify the equation
   double c1 = -1481.96;
   double c2 = 2.1962e6;
   double c3 = 1.8639;
@@ -332,6 +334,7 @@ void updateInfo() {
   display.write(247);
   display.print("C");
 
+  // updating setpoint
   text = "\n\nSet T:\n" + double_to_string(Setpoint, 1);
   display.print(text);
   display.write(247);
