@@ -54,8 +54,6 @@ bool powerState = false;
 
 // PID Variables
 double const start_Setpoint = 100.0;                               // user set temperature.
-PID myPID(&cur_temperature, &Output, &Setpoint, 1, 1, 1, DIRECT);  // Specify the links and initial tuning parameters
-
 const long DelayofTempRead = 2000;  // milliseconds.
 
 // ************************ DO NOT CHNAGE THESE VARIABLES ************************
@@ -63,6 +61,7 @@ const long DelayofTempRead = 2000;  // milliseconds.
 double Setpoint = start_Setpoint;  // user set temperature.
 double cur_temperature;            // current temperature
 double Output;                     // output to heater.
+PID myPID(&cur_temperature, &Output, &Setpoint, 1, 1, 1, DIRECT);  // Specify the links and initial tuning parameters
 
 // Need for rotary Encoder
 int preCLK;  // previous states
@@ -78,7 +77,6 @@ void (*resetFunc)(void) = 0;
 void setup() {
   // put your setup code here, to run once:
 
-  Serial.begin(9600);  // Serial to print messages.
 
   /* Defining pinModes */
   pinMode(CLK, INPUT);  // Encoder
@@ -255,7 +253,6 @@ void set_up_OLED() {
 
   // SSD1306_SWITCHCAPVCC = generate display voltage from 3.3V internally
   if (!display.begin(SSD1306_SWITCHCAPVCC, SCREEN_ADDRESS)) {
-    Serial.println("Failed to connect to OLED...");
     while (true) {
       continue;
     }
@@ -290,7 +287,7 @@ double get_temperature(int pin) {
   */
 
   double Vo = analogRead(pin);
-  Vo = Vo * Vref / 1023.0;  // mapping value to a output voltage.
+  Vo = Vo * Vref / 1023.0;  // mapping value to a voltage.
 
   // // Constants to simplify the equation
   double c1 = -1481.96;
