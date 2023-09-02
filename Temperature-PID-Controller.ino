@@ -30,6 +30,8 @@ BfButton btn(BfButton::STANDALONE_DIGITAL, SW, true, LOW);  // defining Encoder 
 #define RED_LED 2
 #define GREEN_LED 3
 
+#define relay_pin 9  // Relay pin
+
 #define LM19_pin A7  // Reference voltage pin
 
 // Declaring the OLED object.
@@ -52,16 +54,20 @@ const float holdTime = 1000;  // how long to hold the button down.
 // Variables for heater
 bool powerState = false;
 
-// PID Variables
-double const start_Setpoint = 100.0;                               // user set temperature.
-const long DelayofTempRead = 2000;  // milliseconds.
+double const start_Setpoint = 30.0;  // starting temperature.
+const long DelayofTempRead = 1000;   // period of sample.
+
+// PID Coefficients
+const float Kp = 1, Ki = 0.1, Kd = 0.01;
 
 // ************************ DO NOT CHNAGE THESE VARIABLES ************************
 
 double Setpoint = start_Setpoint;  // user set temperature.
 double cur_temperature;            // current temperature
 double Output;                     // output to heater.
-PID myPID(&cur_temperature, &Output, &Setpoint, 1, 1, 1, DIRECT);  // Specify the links and initial tuning parameters
+
+// Creating PID Object
+PID myPID(&cur_temperature, &Output, &Setpoint, Kp, Ki, Kd, DIRECT);  // Specify the links and initial tuning parameters
 
 // Need for rotary Encoder
 int preCLK;  // previous states
@@ -70,18 +76,22 @@ long TimeOfLastDebounce = 0;  // variables for debouncing.
 const long DelayofDebounce = 0.01;
 
 // delay time for reading temperaturez
-long TimeOfLastTempRead = 0;
+long TimeOfLastRead = 0;
+
+
 // ***************************************************** Main Program *****************************************************
 void (*resetFunc)(void) = 0;
 
 void setup() {
   // put your setup code here, to run once:
+  Serial.begin(9600);
 
 
   /* Defining pinModes */
   pinMode(CLK, INPUT);  // Encoder
   pinMode(DT, INPUT);
   pinMode(SW, INPUT_PULLUP);
+  pinMode(relay_pin, OUTPUT);
 
   pinMode(LM19_pin, INPUT);  // LM19 Temp Sensor
 
@@ -96,7 +106,12 @@ void setup() {
   preCLK = digitalRead(CLK);
   preDT = digitalRead(DT);
 
-  set_up_OLED();      // OLED screen for displaying information.
+  // initial read of temperature
+  cur_temperature = get_temperature(LM19_pin);
+
+  set_up_OLED();             // setting up OLED screen.
+  myPID.SetMode(AUTOMATIC);  // turning on PID.
+  run_relay(false);
   RED_LED_led(true);  // initial heater is turned off.
 }
 
@@ -113,10 +128,21 @@ void loop() {
     TimeOfLastDebounce = millis();
   }
 
-  if ((millis() - TimeOfLastTempRead) >= DelayofTempRead) {
-    TimeOfLastTempRead = millis();
+  if ((millis() - TimeOfLastRead) >= DelayofTempRead) {
+    TimeOfLastRead = millis();
     cur_temperature = get_temperature(LM19_pin);
+    myPID.Compute();
     updateInfo();
+    Serial.println(Output);
+
+    if (powerState) {  // if user turned on power to relay.
+      // future code
+      if (Output > 0.0) {
+        run_relay(true);
+      }
+    } else {
+      run_relay(false);
+    }
   }
 }
 
@@ -132,6 +158,21 @@ void GREEN_LED_led(bool state) {
 void RED_LED_led(bool state) {
   // Function to turn on/off RED_LED led.
   digitalWrite(RED_LED, state);
+}
+
+void run_relay(bool state) {
+  /*
+  Function to run the relay.
+
+    Parameters:
+      state: true - on, false - off.
+  */
+
+  if (state) {
+    digitalWrite(relay_pin, HIGH);
+  } else {
+    digitalWrite(relay_pin, LOW);
+  }
 }
 
 
@@ -161,14 +202,14 @@ void read_encoder_btn(BfButton* btn, BfButton::press_pattern_t pattern) {
       break;
 
     case BfButton::LONG_PRESS:
-      if (powerState) {
+      if (powerState) {  // turning heater off
         powerState = false;
-        GREEN_LED_led(false);
-        RED_LED_led(true);
-      } else {
-        GREEN_LED_led(true);
-        RED_LED_led(false);
+        GREEN_LED_led(powerState);
+        RED_LED_led(!powerState);
+      } else {  // turning heater on.
         powerState = true;
+        GREEN_LED_led(powerState);
+        RED_LED_led(!powerState);
       }
       break;
   }
